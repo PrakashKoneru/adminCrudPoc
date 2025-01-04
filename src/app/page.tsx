@@ -25,7 +25,7 @@ export default function Home() {
     }
 
     // Add user message to the end of the array
-    setOutputs(prev => [...prev, {type: 'user', content: command}]);
+    setOutputs(prev => [{type: 'user', content: command}, ...prev]);
     
     // Clear input after sending
     setCommand("");
@@ -37,7 +37,7 @@ export default function Home() {
       console.log(llmResponse);
       
       // Add LLM response to the end of the array
-      setOutputs(prev => [...prev, {type: 'llm', content: llmResponse}]);
+      setOutputs(prev => [{type: 'llm', content: llmResponse}, ...prev]);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -51,6 +51,14 @@ export default function Home() {
         flexDirection="column"
         height="100vh"
         position="relative"
+        bg="linear-gradient(to bottom, #0f172a, #1e293b)"
+        css={{
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          },
+          '-ms-overflow-style': 'none',
+          'scrollbarWidth': 'none'
+        }}
       >
         <Box
           width="100%"
@@ -60,58 +68,40 @@ export default function Home() {
           mx="auto"
           px="20px"
           pt="20px"
-          sx={{
+          css={{
             '&::-webkit-scrollbar': {
-              width: '6px',
+              display: 'none'
             },
-            '&::-webkit-scrollbar-track': {
-              width: '6px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'gray.200',
-              borderRadius: '24px',
-            },
+            '-ms-overflow-style': 'none',
+            'scrollbarWidth': 'none'
           }}
         >
           <Box
             width="100%"
             display="flex"
-            flexDirection="column"
-            justifyContent="flex-end"
+            flexDirection="column-reverse"
+            minHeight="100%"
+            css={{
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              },
+              '-ms-overflow-style': 'none',
+              'scrollbarWidth': 'none'
+            }}
           >
-            {outputs.map((output, index) => (
-              <Box 
-                key={index}
-                p="10px" 
-                bg={output.type === 'user' ? 'blue.50' : 'gray.100'} 
-                borderRadius="10px" 
-                width="fit-content"
-                maxWidth={output.type === 'user' ? '70%' : '85%'}
-                mb="10px"
-                ml={output.type === 'user' ? 'auto' : '0'}
-                mr={output.type === 'user' ? '0' : 'auto'}
-              >
-                <Code 
-                  display="block"
-                  whiteSpace="pre-wrap"
-                  width="100%"
-                  bg="transparent"
-                  p="0"
-                  fontSize="sm"
-                >
-                  {output.content}
-                </Code>
-              </Box>
-            ))}
+            <div ref={messagesEndRef} />
             {isLoading && (
               <Box 
-                p="10px" 
-                bg="gray.100" 
-                borderRadius="10px" 
+                p="16px" 
+                bg="rgba(255, 255, 255, 0.05)"
+                borderRadius="12px"
                 width="fit-content"
                 maxWidth="85%"
-                mb="10px"
+                mb="16px"
                 mr="auto"
+                backdropFilter="blur(10px)"
+                border="1px solid rgba(255, 255, 255, 0.1)"
+                boxShadow="0 0 15px rgba(255, 255, 255, 0.05)"
               >
                 <Code 
                   display="block"
@@ -119,13 +109,65 @@ export default function Home() {
                   width="100%"
                   bg="transparent"
                   p="0"
-                  fontSize="sm"
+                  fontSize="14px"
+                  lineHeight="1.7"
+                  letterSpacing="0.3px"
+                  color="gray.100"
+                  fontFamily="'JetBrains Mono', monospace"
                 >
                   Thinking...
                 </Code>
               </Box>
             )}
-            <div ref={messagesEndRef} />
+            {outputs.map((output, index) => (
+              <Box 
+                key={index}
+                p="16px"
+                bg={output.type === 'user' 
+                  ? 'rgba(56, 189, 248, 0.1)'
+                  : 'rgba(255, 255, 255, 0.05)'
+                }
+                borderRadius="12px"
+                width="fit-content"
+                maxWidth={output.type === 'user' ? '70%' : '85%'}
+                mb="16px"
+                ml={output.type === 'user' ? 'auto' : '0'}
+                mr={output.type === 'user' ? '0' : 'auto'}
+                backdropFilter="blur(10px)"
+                border="1px solid"
+                borderColor={output.type === 'user' 
+                  ? 'rgba(56, 189, 248, 0.2)'
+                  : 'rgba(255, 255, 255, 0.1)'
+                }
+                boxShadow={`0 0 15px ${output.type === 'user' 
+                  ? 'rgba(56, 189, 248, 0.1)'
+                  : 'rgba(255, 255, 255, 0.05)'
+                }`}
+              >
+                <Code 
+                  display="block"
+                  whiteSpace="pre-wrap"
+                  width="100%"
+                  bg="transparent"
+                  p="0"
+                  fontSize="14px"
+                  lineHeight="1.7"
+                  letterSpacing="0.3px"
+                  color={output.type === 'user' ? 'cyan.100' : 'gray.100'}
+                  fontFamily="'JetBrains Mono', monospace"
+                  sx={{
+                    '& > *': {
+                      marginBottom: '8px'
+                    },
+                    '& > *:last-child': {
+                      marginBottom: 0
+                    }
+                  }}
+                >
+                  {output.content}
+                </Code>
+              </Box>
+            ))}
           </Box>
         </Box>
 
@@ -135,9 +177,9 @@ export default function Home() {
           left="0"
           right="0"
           p="20px"
-          bg="white"
-          borderTop="1px solid"
-          borderColor="gray.100"
+          bg="rgba(15, 23, 42, 0.8)"
+          backdropFilter="blur(10px)"
+          borderTop="1px solid rgba(56, 189, 248, 0.1)"
         >
           <Flex
             position="relative"
@@ -149,11 +191,17 @@ export default function Home() {
               pl="20px"
               height="45px"
               borderRadius="100px"
-              boxShadow="md"
-              _hover={{ borderColor: "gray.400" }}
-              _focus={{ borderColor: "gray.400" }}
-              _placeholder={{ color: "gray.500" }}
-              placeholder="I'm An Agent, ask me anything"
+              bg="rgba(255, 255, 255, 0.05)"
+              border="1px solid rgba(56, 189, 248, 0.2)"
+              color="gray.100"
+              _hover={{ borderColor: "cyan.400" }}
+              _focus={{ 
+                borderColor: "cyan.400",
+                boxShadow: "0 0 15px rgba(56, 189, 248, 0.2)"
+              }}
+              _placeholder={{ color: "gray.400" }}
+              placeholder="Ask me anything..."
+              fontFamily="'JetBrains Mono', monospace"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyPress={(e) => {
@@ -171,9 +219,9 @@ export default function Home() {
               borderRadius="full"
               onClick={handleCommand}
               bg="transparent"
-              color="gray.600"
-              _hover={{ bg: "gray.100" }}
-              _active={{ bg: "gray.200" }}
+              color="cyan.200"
+              _hover={{ bg: "rgba(56, 189, 248, 0.1)" }}
+              _active={{ bg: "rgba(56, 189, 248, 0.2)" }}
               width="35px"
               height="35px"
               p="0"

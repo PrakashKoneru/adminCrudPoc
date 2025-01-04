@@ -1,12 +1,30 @@
-export async function getLLMResponse(command: string) {
-    const response = await fetch('/api/initiateLLM', {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ command }),
-    });
+import axios from 'axios';
 
-    const data = await response.json();
-    return data.content || "No response from LLM.";
+export async function getLLMResponse(command: string) {
+    try {
+        const response = await axios.post('/api/initiateLLM', {
+            command
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('LLM Response:', response.data);
+        
+        // Check if we have a toolResponse in the API response
+        if (response.data.toolResponse) {
+            return response.data.toolResponse;
+        }
+        
+        // Handle error cases
+        if (response.data.error) {
+            throw new Error(response.data.error);
+        }
+        
+        return "No valid response received";
+    } catch (error) {
+        console.error('Error in getLLMResponse:', error);
+        throw error;
+    }
 }

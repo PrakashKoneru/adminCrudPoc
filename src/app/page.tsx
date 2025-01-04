@@ -2,12 +2,14 @@
 
 import { ChakraProvider, Flex, Input, Button, Box, Code, defaultSystem } from "@chakra-ui/react";
 import { useState, useRef, useEffect } from "react";
-import { getLLMResponse } from "./lib/llmAgent";
 import { FaPlay } from "react-icons/fa";
+import { mapAndExecuteTool } from "./lib/toolRegistry";
+import { getLLMResponse } from "./lib/llmAgent";
+import { data } from "framer-motion/client";
 
 export default function Home() {
   const [command, setCommand] = useState("");
-  const [outputs, setOutputs] = useState<Array<{type: 'user' | 'llm', content: string}>>([]);
+  const [outputs, setOutputs] = useState<Array<{ type: "user" | "system"; content: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -24,22 +26,62 @@ export default function Home() {
       return;
     }
 
-    // Add user message to the end of the array
-    setOutputs(prev => [{type: 'user', content: command}, ...prev]);
-    
-    // Clear input after sending
+    setOutputs((prev) => [{ type: "user", content: command }, ...prev]);
     setCommand("");
-    
     setIsLoading(true);
 
     try {
-      const llmResponse = await getLLMResponse(command);
-      console.log(llmResponse);
+      const toolResponse = await getLLMResponse(command);
+      // console.log('LLM Response:', toolResponse);
       
-      // Add LLM response to the end of the array
-      setOutputs(prev => [{type: 'llm', content: llmResponse}, ...prev]);
+      if (!toolResponse) {
+        setOutputs((prev) => [
+          { type: "system", content: "No tool could be matched to your command." },
+          ...prev,
+        ]);
+        return;
+      }
+
+      // Display the tool and parameters to the user
+      setOutputs((prev) => [
+        {
+          type: "system",
+          content: JSON.stringify(toolResponse, null, 2),
+        },
+        ...prev,
+      ]);
+
+      // Handle the confirmation response
+      // const confirmCommand = async (confirmationResponse: string) => {
+      //   if (confirmationResponse.toLowerCase() === "yes") {
+      //     const result = await mapAndExecuteTool(toolResponse.tool, toolResponse.params);
+      //     setOutputs((prev) => [
+      //       { type: "system", content: JSON.stringify(result, null, 2) },
+      //       ...prev,
+      //     ]);
+      //   } else {
+      //     setOutputs((prev) => [
+      //       { type: "system", content: "Command canceled. Please modify your input and try again." },
+      //       ...prev,
+      //     ]);
+      //   }
+      // };
+
+      setCommand("");
+      const listener = async (e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+          const confirmationResponse = command.trim();
+          window.removeEventListener("keypress", listener);
+          await confirmCommand(confirmationResponse);
+        }
+      };
+      window.addEventListener("keypress", listener);
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error processing command:", error);
+      setOutputs((prev) => [
+        { type: "system", content: "Error processing your command. Please try again." },
+        ...prev,
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -53,11 +95,11 @@ export default function Home() {
         position="relative"
         bg="linear-gradient(to bottom, #0f172a, #1e293b)"
         css={{
-          '&::-webkit-scrollbar': {
-            display: 'none'
+          "&::-webkit-scrollbar": {
+            display: "none",
           },
-          '-ms-overflow-style': 'none',
-          'scrollbarWidth': 'none'
+          "-ms-overflow-style": "none",
+          scrollbarWidth: "none",
         }}
       >
         <Box
@@ -69,11 +111,11 @@ export default function Home() {
           px="20px"
           pt="20px"
           css={{
-            '&::-webkit-scrollbar': {
-              display: 'none'
+            "&::-webkit-scrollbar": {
+              display: "none",
             },
-            '-ms-overflow-style': 'none',
-            'scrollbarWidth': 'none'
+            "-ms-overflow-style": "none",
+            scrollbarWidth: "none",
           }}
         >
           <Box
@@ -82,17 +124,17 @@ export default function Home() {
             flexDirection="column-reverse"
             minHeight="100%"
             css={{
-              '&::-webkit-scrollbar': {
-                display: 'none'
+              "&::-webkit-scrollbar": {
+                display: "none",
               },
-              '-ms-overflow-style': 'none',
-              'scrollbarWidth': 'none'
+              "-ms-overflow-style": "none",
+              scrollbarWidth: "none",
             }}
           >
             <div ref={messagesEndRef} />
             {isLoading && (
-              <Box 
-                p="16px" 
+              <Box
+                p="16px"
                 bg="rgba(255, 255, 255, 0.05)"
                 borderRadius="12px"
                 width="fit-content"
@@ -103,7 +145,7 @@ export default function Home() {
                 border="1px solid rgba(255, 255, 255, 0.1)"
                 boxShadow="0 0 15px rgba(255, 255, 255, 0.05)"
               >
-                <Code 
+                <Code
                   display="block"
                   whiteSpace="pre-wrap"
                   width="100%"
@@ -120,31 +162,34 @@ export default function Home() {
               </Box>
             )}
             {outputs.map((output, index) => (
-              <Box 
+              <Box
                 key={index}
                 p="16px"
-                bg={output.type === 'user' 
-                  ? 'rgba(56, 189, 248, 0.1)'
-                  : 'rgba(255, 255, 255, 0.05)'
+                bg={
+                  output.type === "user"
+                    ? "rgba(56, 189, 248, 0.1)"
+                    : "rgba(255, 255, 255, 0.05)"
                 }
                 borderRadius="12px"
                 width="fit-content"
-                maxWidth={output.type === 'user' ? '70%' : '85%'}
+                maxWidth={output.type === "user" ? "70%" : "85%"}
                 mb="16px"
-                ml={output.type === 'user' ? 'auto' : '0'}
-                mr={output.type === 'user' ? '0' : 'auto'}
+                ml={output.type === "user" ? "auto" : "0"}
+                mr={output.type === "user" ? "0" : "auto"}
                 backdropFilter="blur(10px)"
                 border="1px solid"
-                borderColor={output.type === 'user' 
-                  ? 'rgba(56, 189, 248, 0.2)'
-                  : 'rgba(255, 255, 255, 0.1)'
+                borderColor={
+                  output.type === "user"
+                    ? "rgba(56, 189, 248, 0.2)"
+                    : "rgba(255, 255, 255, 0.1)"
                 }
-                boxShadow={`0 0 15px ${output.type === 'user' 
-                  ? 'rgba(56, 189, 248, 0.1)'
-                  : 'rgba(255, 255, 255, 0.05)'
+                boxShadow={`0 0 15px ${
+                  output.type === "user"
+                    ? "rgba(56, 189, 248, 0.1)"
+                    : "rgba(255, 255, 255, 0.05)"
                 }`}
               >
-                <Code 
+                <Code
                   display="block"
                   whiteSpace="pre-wrap"
                   width="100%"
@@ -153,15 +198,17 @@ export default function Home() {
                   fontSize="14px"
                   lineHeight="1.7"
                   letterSpacing="0.3px"
-                  color={output.type === 'user' ? 'cyan.100' : 'gray.100'}
+                  color={
+                    output.type === "user" ? "cyan.100" : "gray.100"
+                  }
                   fontFamily="'JetBrains Mono', monospace"
                   sx={{
-                    '& > *': {
-                      marginBottom: '8px'
+                    "& > *": {
+                      marginBottom: "8px",
                     },
-                    '& > *:last-child': {
-                      marginBottom: 0
-                    }
+                    "& > *:last-child": {
+                      marginBottom: 0,
+                    },
                   }}
                 >
                   {output.content}
@@ -181,11 +228,7 @@ export default function Home() {
           backdropFilter="blur(10px)"
           borderTop="1px solid rgba(56, 189, 248, 0.1)"
         >
-          <Flex
-            position="relative"
-            maxWidth="600px"
-            mx="auto"
-          >
+          <Flex position="relative" maxWidth="600px" mx="auto">
             <Input
               pr="50px"
               pl="20px"
@@ -195,9 +238,9 @@ export default function Home() {
               border="1px solid rgba(56, 189, 248, 0.2)"
               color="gray.100"
               _hover={{ borderColor: "cyan.400" }}
-              _focus={{ 
+              _focus={{
                 borderColor: "cyan.400",
-                boxShadow: "0 0 15px rgba(56, 189, 248, 0.2)"
+                boxShadow: "0 0 15px rgba(56, 189, 248, 0.2)",
               }}
               _placeholder={{ color: "gray.400" }}
               placeholder="Ask me anything..."
@@ -205,7 +248,7 @@ export default function Home() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleCommand();
                 }
               }}

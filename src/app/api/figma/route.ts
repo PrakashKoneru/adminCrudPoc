@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { ButtonSchema, CardSchema, LayoutSchema } from '@/types';
 
 const FIGMA_API_URL = "https://api.figma.com/v1/files";
 const FIGMA_ACCESS_TOKEN = process.env.FIGMA_API_KEY;
@@ -41,36 +42,67 @@ function traverseNode(node: any) {
         : null;
     }
 
-    // For COMPONENT nodes
+    // For COMPONENT nodes (representing the layout)
     if (node.type === "COMPONENT") {
-      const processedNode = {
-        id: node.id,
-        name: node.name,
-        type: node.type,
-        width: node.absoluteBoundingBox?.width || null,
-        height: node.absoluteBoundingBox?.height || null,
-        text: null
-      };
+      const children = node.children
+        ?.filter(child => child.type === "INSTANCE")
+        .sort((a, b) => {
+          const yDiff = (a.absoluteBoundingBox?.y || 0) - (b.absoluteBoundingBox?.y || 0);
+          return yDiff === 0 
+            ? (a.absoluteBoundingBox?.x || 0) - (b.absoluteBoundingBox?.x || 0)
+            : yDiff;
+        })
+        .map(child => {
+          const isCard = child.name.includes('Card');
+          const isButton = child.name.includes('Button');
+          
+          if (!isCard && !isButton) return null;
 
-      // Process INSTANCE children
-      if (node.children) {
-        const instances = node.children
-          .filter(child => child.type === "INSTANCE")
-          .map(child => ({
+          const componentBase = {
             id: child.id,
-            name: child.name,
-            type: child.type,
+            variant: 'Default',
             width: child.absoluteBoundingBox?.width || null,
             height: child.absoluteBoundingBox?.height || null,
-            text: child.children?.find(c => c.type === "TEXT")?.characters?.replace(/\.$/, '') || null
-          }));
+            properties: {
+              text: child.children?.find(c => c.type === "TEXT")?.characters || "",
+              icon: child.children?.find(c => c.type === "INSTANCE" && c.name.includes("icon"))?.name || "",
+              action: {
+                type: 'Link' as const,
+                variant: 'Default',
+                deep_link: `settings?modal=${child.name.toLowerCase()}`
+              }
+            }
+          };
 
-        if (instances.length > 0) {
-          processedNode.children = instances;
-        }
-      }
+          if (isCard) {
+            return {
+              ...componentBase,
+              type: 'Card' as const
+            };
+          }
 
-      return processedNode;
+          if (isButton) {
+            return {
+              ...componentBase,
+              type: 'Button' as const
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+
+      return {
+        id: node.id,
+        type: 'Layout' as const,
+        variant: 'Default',
+        width: node.absoluteBoundingBox?.width || null,
+        height: node.absoluteBoundingBox?.height || null,
+        properties: {
+          imageUrl: 'https://placeholder.com/image', // You'll need to extract this from Figma data
+        },
+        children: children || []
+      };
     }
 
     return null;

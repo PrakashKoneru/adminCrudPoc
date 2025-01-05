@@ -14,7 +14,6 @@ export const CardSchema = z.object({
   height: z.number().nullable(),
   properties: z.object({
     text: z.string(),
-    icon: z.string().optional(),
     action: CardActionSchema,
   }),
 });

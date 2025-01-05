@@ -16,7 +16,7 @@ export function updateComponent(componentId: string, updates: any) {
 
 export async function fetchFigmaFile(fileId: string): Promise<any> {
   try {
-    console.log('fetching figma file: ', `/api/figma?fileId=${fileId}`);
+    console.log('fetching figma file: ', fileId);
     const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await axios.get(`${BASE_URL}/api/figma`, {
       params: { fileId }

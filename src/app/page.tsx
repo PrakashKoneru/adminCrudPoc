@@ -6,12 +6,14 @@ import { FaPlay } from "react-icons/fa";
 import { mapAndExecuteTool } from "./lib/toolRegistry";
 import { getLLMResponse } from "./lib/llmAgent";
 import { data } from "framer-motion/client";
+import { Layout } from './components/layout';
 
 export default function Home() {
   const [command, setCommand] = useState("");
   const [outputs, setOutputs] = useState<Array<{ type: "user" | "system"; content: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [layoutData, setLayoutData] = useState<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,60 +24,47 @@ export default function Home() {
   }, [outputs, isLoading]);
 
   const handleCommand = async () => {
-    if (!command.trim()) {
-      return;
-    }
+    if (!command.trim()) return;
 
     setOutputs((prev) => [{ type: "user", content: command }, ...prev]);
     setCommand("");
     setIsLoading(true);
+    setLayoutData(null);
 
     try {
-      const toolResponse = await getLLMResponse(command);
-      // console.log('LLM Response:', toolResponse);
+      const response = await getLLMResponse(command);
       
-      if (!toolResponse) {
+      if (!response) {
         setOutputs((prev) => [
-          { type: "system", content: "No tool could be matched to your command." },
+          { type: "system", content: "No response received." },
           ...prev,
         ]);
         return;
       }
 
-      // Display the tool and parameters to the user
-      setOutputs((prev) => [
-        {
-          type: "system",
-          content: JSON.stringify(toolResponse, null, 2),
-        },
-        ...prev,
-      ]);
+      // First try to parse as JSON
+      try {
+        const parsedResponse = typeof response === 'string' 
+          ? JSON.parse(response) 
+          : response;
 
-      // Handle the confirmation response
-      // const confirmCommand = async (confirmationResponse: string) => {
-      //   if (confirmationResponse.toLowerCase() === "yes") {
-      //     const result = await mapAndExecuteTool(toolResponse.tool, toolResponse.params);
-      //     setOutputs((prev) => [
-      //       { type: "system", content: JSON.stringify(result, null, 2) },
-      //       ...prev,
-      //     ]);
-      //   } else {
-      //     setOutputs((prev) => [
-      //       { type: "system", content: "Command canceled. Please modify your input and try again." },
-      //       ...prev,
-      //     ]);
-      //   }
-      // };
+        setOutputs((prev) => [
+          { type: "system", content: JSON.stringify(parsedResponse, null, 2) },
+          ...prev,
+        ]);
 
-      setCommand("");
-      const listener = async (e: KeyboardEvent) => {
-        if (e.key === "Enter") {
-          const confirmationResponse = command.trim();
-          window.removeEventListener("keypress", listener);
-          await confirmCommand(confirmationResponse);
+        if (parsedResponse.type === 'Layout') {
+          setLayoutData(parsedResponse);
         }
-      };
-      window.addEventListener("keypress", listener);
+
+      } catch (e) {
+        // If parsing fails, treat it as a plain text response
+        setOutputs((prev) => [
+          { type: "system", content: response.toString() },
+          ...prev,
+        ]);
+      }
+
     } catch (error) {
       console.error("Error processing command:", error);
       setOutputs((prev) => [
@@ -86,7 +75,7 @@ export default function Home() {
       setIsLoading(false);
     }
   };
-
+console.log('layoutData: ', layoutData);
   return (
     <ChakraProvider value={defaultSystem}>
       <Flex
@@ -217,7 +206,19 @@ export default function Home() {
             ))}
           </Box>
         </Box>
-
+        {layoutData && (
+          <Box 
+            mb="16px" 
+            width="100%" 
+            position="relative"
+            borderRadius="12px"
+            overflow="hidden"
+            border="1px solid rgba(56, 189, 248, 0.2)"
+            boxShadow="0 0 15px rgba(56, 189, 248, 0.1)"
+          >
+            <Layout data={layoutData} />
+          </Box>
+        )}
         <Box
           position="fixed"
           bottom="0"

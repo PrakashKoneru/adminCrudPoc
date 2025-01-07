@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import axios from "axios";
 
 export function getComponents(platform: string) {

@@ -26,6 +26,6 @@ export async function fetchFigmaFile(fileId: string): Promise<any> {
     return response.data;
   } catch (error) {
     console.error("Figma API Error:", error);
-    return { error: `Failed to fetch Figma file. URL: ${process.env.NEXT_PUBLIC_API_URL}, fileId: ${fileId}` };
+    return { error: `Failed to fetch Figma file. URL: ${process.env.NEXT_PUBLIC_API_URL}, fileId: ${fileId}, error: ${error}` };
   }
 }

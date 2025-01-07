@@ -1,5 +1,4 @@
 /* eslint-disable */
-// @ts-nocheck
 
 import { Button as ButtonType } from '@/types';
 import { Button as ChakraButton, Icon } from '@chakra-ui/react';
@@ -9,10 +8,12 @@ import { useRouter } from 'next/navigation';
 // Define component-specific theme
 export const buttonTheme = defineStyleConfig({
   baseStyle: {
-    width: "150px",
-    height: "40px",
+    minWidth: "150px",
+    maxWidth: "150px",
     minHeight: "40px",
     maxHeight: "40px",
+    width: "150px",
+    height: "40px",
     bg: "blue.500",
     color: "white",
     borderRadius: "lg",
@@ -26,9 +27,11 @@ export const buttonTheme = defineStyleConfig({
   }
 });
 
-interface ButtonProps extends ButtonType {}
+interface ButtonProps extends ButtonType {
+    gridArea: string
+}
 
-export const Button = ({ properties, width, height }: ButtonProps) => {
+export const Button = ({ properties, width, height, gridArea }: ButtonProps) => {
   const router = useRouter();
   const { text, icon, action } = properties;
 
@@ -47,6 +50,7 @@ export const Button = ({ properties, width, height }: ButtonProps) => {
       maxH="40px"
       p={0}
       leftIcon={icon ? <Icon as={icon} /> : undefined}
+      gridArea={gridArea}
     >
       {text}
     </ChakraButton>

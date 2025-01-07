@@ -19,13 +19,13 @@ export function updateComponent(componentId: string, updates: any) {
 export async function fetchFigmaFile(fileId: string): Promise<any> {
   try {
     console.log('fetching figma file: ', fileId);
-    const BASE_URL = window.location.origin || 'http://localhost:3000';
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await axios.get(`${BASE_URL}/api/figma`, {
       params: { fileId }
     });
     return response.data;
   } catch (error) {
     console.error("Figma API Error:", error);
-    return { error: "Failed to fetch Figma file. Please check the file ID." };
+    return { error: `Failed to fetch Figma file. URL: ${process.env.NEXT_PUBLIC_API_URL}, fileId: ${fileId}` };
   }
 }

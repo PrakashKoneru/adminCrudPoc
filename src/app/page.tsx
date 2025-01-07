@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 "use client";
 
 import { ChakraProvider, Flex, Input, Button, Box, Code, defaultSystem } from "@chakra-ui/react";

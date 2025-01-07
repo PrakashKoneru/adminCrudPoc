@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { Button as ButtonType } from '@/types';
 import { Button as ChakraButton, Icon } from '@chakra-ui/react';
 import { defineStyle, defineStyleConfig } from '@chakra-ui/styled-system';

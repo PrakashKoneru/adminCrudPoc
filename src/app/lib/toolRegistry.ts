@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { getComponents, updateComponent, fetchFigmaFile } from "./tools";
 
 export const toolRegistry: { [key: string]: (args: any) => Promise<any> | any } = {

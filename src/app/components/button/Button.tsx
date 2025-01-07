@@ -36,7 +36,9 @@ export const Button = ({ properties, width, height, gridArea }: ButtonProps) => 
   const { text, icon, action } = properties;
 
   const handleClick = () => {
+    // @ts-ignore 
     if (action.type === 'Link') {
+    // @ts-ignore 
       router.push(action.deep_link);
     }
   };

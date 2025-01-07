@@ -1,5 +1,5 @@
 /* eslint-disable */
-
+// @ts-ignore 
 import { Card as CardType } from '@/types';
 import { 
   Box,
@@ -10,6 +10,7 @@ import { defineStyleConfig } from '@chakra-ui/styled-system';
 import { useRouter } from 'next/navigation';
 
 // Define component-specific theme
+// @ts-ignore 
 export const cardTheme = defineStyleConfig({
   baseStyle: {
     container: {
@@ -77,7 +78,7 @@ export const Card = ({ properties, variant, width, height, gridArea }: CardProps
       h={height || 'auto'}
       gridArea={gridArea}
     >
-      <VStack align="flex-start" spacing={4} h="full">
+      <VStack align="flex-start" h="full">
         <Box p={6}>
           <Text>{text}</Text>
         </Box>

@@ -54,9 +54,11 @@ export const cardTheme = defineStyleConfig({
   },
 });
 
-interface CardProps extends CardType {}
+interface CardProps extends CardType {
+    gridArea: string
+}
 
-export const Card = ({ properties, variant, width, height }: CardProps) => {
+export const Card = ({ properties, variant, width, height, gridArea }: CardProps) => {
   const router = useRouter();
   const { text, action } = properties;
 
@@ -71,6 +73,7 @@ export const Card = ({ properties, variant, width, height }: CardProps) => {
       onClick={handleClick}
       w={width || 'auto'}
       h={height || 'auto'}
+      gridArea={gridArea}
     >
       <VStack align="flex-start" spacing={4} h="full">
         <Box p={6}>

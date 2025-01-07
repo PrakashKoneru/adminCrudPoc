@@ -6,50 +6,30 @@ import { useRouter } from 'next/navigation';
 // Define component-specific theme
 export const buttonTheme = defineStyleConfig({
   baseStyle: {
-    fontWeight: "medium",
+    minWidth: "150px",
+    maxWidth: "150px",
+    minHeight: "40px",
+    maxHeight: "40px",
+    width: "150px",
+    height: "40px",
+    bg: "blue.500",
+    color: "white",
     borderRadius: "lg",
-    px: 6,
-    py: 4,
-    transition: "all 0.2s",
-    boxShadow: "md",
-    textTransform: "capitalize",
-  },
-  variants: {
-    Default: {
-      bg: "blue.500",
-      color: "white",
-      _hover: {
-        bg: "blue.600",
-        transform: "translateY(-2px)",
-        boxShadow: "lg",
-      },
-      _active: {
-        bg: "blue.700",
-        transform: "translateY(0)",
-      },
+    padding: 0,
+    _hover: {
+      bg: "blue.600",
     },
-    Secondary: {
-      bg: "gray.100",
-      color: "gray.800",
-      _hover: {
-        bg: "gray.200",
-        transform: "translateY(-2px)",
-        boxShadow: "lg",
-      },
-      _active: {
-        bg: "gray.300",
-        transform: "translateY(0)",
-      },
-    },
-  },
-  defaultProps: {
-    variant: "Default",
-  },
+    _active: {
+      bg: "blue.700",
+    }
+  }
 });
 
-interface ButtonProps extends ButtonType {}
+interface ButtonProps extends ButtonType {
+    gridArea: string
+}
 
-export const Button = ({ properties, variant, width, height }: ButtonProps) => {
+export const Button = ({ properties, width, height, gridArea }: ButtonProps) => {
   const router = useRouter();
   const { text, icon, action } = properties;
 
@@ -62,10 +42,13 @@ export const Button = ({ properties, variant, width, height }: ButtonProps) => {
   return (
     <ChakraButton
       onClick={handleClick}
-      variant={variant}
-      w={width || 'auto'}
-      h={height || 'auto'}
+      w="150px"
+      h="40px"
+      minH="40px"
+      maxH="40px"
+      p={0}
       leftIcon={icon ? <Icon as={icon} /> : undefined}
+      gridArea={gridArea}
     >
       {text}
     </ChakraButton>

@@ -93,7 +93,7 @@ console.log('layoutData: ', layoutData);
       >
         <Box
           width="100%"
-          maxWidth="600px"
+          maxWidth="750px"
           height="calc(100vh - 100px)"
           overflowY="auto"
           mx="auto"
@@ -205,20 +205,12 @@ console.log('layoutData: ', layoutData);
               </Box>
             ))}
           </Box>
-        </Box>
-        {layoutData && (
-          <Box 
-            mb="16px" 
-            width="100%" 
-            position="relative"
-            borderRadius="12px"
-            overflow="hidden"
-            border="1px solid rgba(56, 189, 248, 0.2)"
-            boxShadow="0 0 15px rgba(56, 189, 248, 0.1)"
-          >
+          <Box>
+          {layoutData && (
             <Layout data={layoutData} />
+          )}
           </Box>
-        )}
+        </Box>
         <Box
           position="fixed"
           bottom="0"

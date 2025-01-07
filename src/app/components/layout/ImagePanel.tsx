@@ -1,4 +1,4 @@
-import { ImagePanel as ImagePanelType } from '@/types';
+import { ImagePanel as ImagePanelType } from '@/types/components/layout';
 import { Box, Image } from '@chakra-ui/react';
 
 interface ImagePanelProps {
@@ -6,19 +6,27 @@ interface ImagePanelProps {
 }
 
 export const ImagePanel = ({ properties }: ImagePanelProps) => {
-  const { imageUrl, width, height, fit, aspectRatio } = properties;
+  const { images, fit } = properties;
 
   return (
     <Box 
       position="relative"
-      w={{ base: 'full', md: '50%' }}
-      h="full"
+      w={images.desktop.width}
+      h={images.desktop.height}
     >
       <Image
-        src={imageUrl}
+        src={images.desktop.url}
         alt=""
-        w="full"
-        h="full"
+        w={{
+          base: images.mobile.width,
+          sm: images.tablet.width,
+          md: images.desktop.width
+        }}
+        h={{
+          base: images.mobile.height,
+          sm: images.tablet.height,
+          md: images.desktop.height
+        }}
         objectFit={fit}
         loading="eager"
       />

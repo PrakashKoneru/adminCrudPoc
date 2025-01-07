@@ -1,17 +1,92 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { ButtonSchema, CardSchema, LayoutSchema } from '@/types';
-
-// Add debug logging
-console.log('Imported schemas:', {
-  hasButtonSchema: !!ButtonSchema,
-  hasCardSchema: !!CardSchema,
-  hasLayoutSchema: !!LayoutSchema,
-  layoutSchema: LayoutSchema
-});
+import { LayoutSchema } from "../../../types/components/layout";
+import { GridSchema } from "../../../types/components/grid";
+import { CardSchema, CardActionSchema } from "../../../types/components/card";
+import { ButtonSchema, ButtonActionSchema } from "../../../types/components/button";
 
 const FIGMA_API_URL = "https://api.figma.com/v1/files";
 const FIGMA_ACCESS_TOKEN = process.env.FIGMA_API_KEY;
+
+// Explicit schema mapping
+const componentSchemas = {
+  Card: {
+    schema: CardSchema,
+    actionSchema: CardActionSchema
+  },
+  Button: {
+    schema: ButtonSchema,
+    actionSchema: ButtonActionSchema
+  }
+} as const;
+
+// Helper functions for grid calculations
+function calculateColStart(x: number, parentBounds: any): number {
+  const parentWidth = parentBounds.width;
+  const columnWidth = parentWidth / 12;
+  return Math.round((x - parentBounds.x) / columnWidth) + 1;
+}
+
+function calculateColSpan(width: number, parentBounds: any): number {
+  const columnWidth = parentBounds.width / 12;
+  return Math.round(width / columnWidth);
+}
+
+function calculateRowStart(y: number, parentBounds: any): number {
+  const parentHeight = parentBounds.height;
+  const approximateRowHeight = parentHeight / 4; // Assuming 4 rows
+  return Math.round((y - parentBounds.y) / approximateRowHeight) + 1;
+}
+
+async function createComponent(child: any, gridPosition: any) {
+  const schemaConfig = componentSchemas[child.name as keyof typeof componentSchemas];
+  
+  if (!schemaConfig) {
+    console.warn(`Schema not found for component: ${child.name}`);
+    return null;
+  }
+
+  try {
+    // First create the action based on component type
+    const action = child.name === 'Card' 
+      ? {
+          type: 'Link',
+          variant: 'Default',
+          deep_link: child.properties?.deep_link || 'https://www.google.com' // Default link
+        }
+      : {
+          type: 'Button',
+          variant: 'Default',
+          onClick: child.properties?.onClick || 'https://www.google.com' // Default link for button
+        };
+
+    // Validate the action using the appropriate schema
+    const validatedAction = schemaConfig.actionSchema.parse(action);
+
+    const baseProps = {
+      id: child.id,
+      type: child.name,
+      variant: 'Default',
+      width: child.absoluteBoundingBox?.width || 0,
+      height: child.absoluteBoundingBox?.height || 0,
+      grid: gridPosition,
+      properties: {
+        text: child.children?.find(c => c.type === "TEXT")?.characters || "",
+        action: validatedAction
+      }
+    };
+
+    const result = schemaConfig.schema.parse(baseProps);
+    console.log(`Successfully created ${child.name} component:`, result);
+    return result;
+
+  } catch (error) {
+    console.error(`Failed to create component ${child.name}:`, error);
+    console.error('Action schema:', schemaConfig.actionSchema);
+    console.error('Component schema:', schemaConfig.schema);
+    return null;
+  }
+}
 
 // Fetch Figma file data
 async function fetchFigmaFile(fileId: string) {
@@ -29,117 +104,93 @@ async function fetchFigmaFile(fileId: string) {
     return response.data;
   } catch (error) {
     console.error("Figma API call failed:", error);
-    throw handleFigmaError(error);
+    throw error;
   }
 }
 
-// Handle Figma API errors
-function handleFigmaError(error: any) {
-  console.error("Figma API error:", error);
-  if (axios.isAxiosError(error)) {
-    return {
-      error: error.response?.data || "Failed to fetch Figma data",
-      status: error.response?.status || 500,
-    };
+async function traverseNode(node: any) {
+  if (!node) return null;
+
+  if (node.type === "DOCUMENT" || node.type === "CANVAS") {
+    const children = await Promise.all(node.children?.map(traverseNode) || []);
+    return children.filter(Boolean)[0];
   }
-  return { error: "Unknown error occurred", status: 500 };
-}
 
-// Traverse the document and extract details
-function traverseNode(node: any) {
-    if (!node) return null;
+  if (node.type === "FRAME" && node.name.includes("Layout")) {
+    const rightPanel = node.children?.find((child: any) => child.name === "rightPanel");
+    const leftPanel = node.children?.find((child: any) => child.name === "leftPanel");
 
-    // Handle DOCUMENT and CANVAS nodes
-    if (node.type === "DOCUMENT" || node.type === "CANVAS") {
-      return node.children?.length 
-        ? traverseNode(node.children[0]) 
-        : null;
-    }
+    // Process all INSTANCE children in rightPanel
+    const rightPanelComponents = await Promise.all(
+      rightPanel?.children
+        ?.filter((child: any) => child.type === "INSTANCE")
+        .map(async (child: any) => {
+          const gridPosition = GridSchema.parse({
+            colStart: calculateColStart(child.absoluteBoundingBox.x, rightPanel.absoluteBoundingBox),
+            colSpan: calculateColSpan(child.absoluteBoundingBox.width, rightPanel.absoluteBoundingBox),
+            rowStart: calculateRowStart(child.absoluteBoundingBox.y, rightPanel.absoluteBoundingBox)
+          });
+          
+          return createComponent(child, gridPosition);
+        }) || []
+    );
 
-    // Handle main COMPONENT (Layout)
-    if (node.type === "COMPONENT") {
-      // Get all components and their positions
-      const components = node.children
-        ?.filter(child => child.type === "INSTANCE" || child.type === "COMPONENT")
-        .sort((a, b) => {
-          const yDiff = (a.absoluteBoundingBox?.y || 0) - (b.absoluteBoundingBox?.y || 0);
-          return yDiff === 0 
-            ? (a.absoluteBoundingBox?.x || 0) - (b.absoluteBoundingBox?.x || 0)
-            : yDiff;
-        })
-        .map(child => ({
-          id: child.id,
-          type: child.name.split('/')[0],
-          variant: child.componentProperties?.variant || 'Default',
-          width: child.absoluteBoundingBox?.width || null,
-          height: child.absoluteBoundingBox?.height || null,
+    return LayoutSchema.parse({
+      id: node.id,
+      type: 'Layout',
+      variant: 'Default',
+      width: node.absoluteBoundingBox?.width || 700,
+      height: node.absoluteBoundingBox?.height || 475,
+      properties: {
+        responsive: {
+          breakpoint: 768
+        },
+        backgroundColor: node.backgroundColor
+      },
+      panels: {
+        left: {
+          type: 'ImagePanel',
           properties: {
-            text: child.children?.find(c => c.type === "TEXT")?.characters || "",
-            action: {
-              type: 'Link',
-              variant: child.componentProperties?.actionVariant || 'Default',
-              deep_link: `settings?modal=${child.name.toLowerCase()}`
-            }
-          }
-        }));
-
-      return LayoutSchema.parse({
-        id: node.id,
-        type: 'Layout',
-        variant: node.componentProperties?.variant || 'Default',
-        properties: {
-          responsive: {
-            breakpoint: 768,
-            mobileLayout: 'stacked',
-          },
-          backgroundColor: node.backgroundColor || { r: 1, g: 1, b: 1, a: 1 },
-        },
-        panels: {
-          left: {
-            type: 'ImagePanel',
-            properties: {
-              imageUrl: 'https://dummyimage.com/600x400/000/fff',
-              width: 0,
-              height: 600,
-              fit: 'cover',
-            },
-          },
-          right: {
-            type: 'ContentPanel',
-            properties: {
-              layout: 'stack',
-              gap: 16,
-              padding: {
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
+            width: leftPanel?.absoluteBoundingBox?.width || 350,
+            height: leftPanel?.absoluteBoundingBox?.height || 475,
+            images: {
+              desktop: {
+                url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba',
+                width: leftPanel?.absoluteBoundingBox?.width || 350,
+                height: leftPanel?.absoluteBoundingBox?.height || 475
               },
-              alignment: 'start',
-              direction: 'vertical',
+              tablet: {
+                url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba',
+                width: leftPanel?.absoluteBoundingBox?.width || 350,
+                height: leftPanel?.absoluteBoundingBox?.height || 475
+              },
+              mobile: {
+                url: 'https://images.unsplash.com/photo-1682687220742-aba13b6e50ba',
+                width: '100%',
+                height: 300
+              }
             },
-            children: components,
-          },
+            fit: 'cover'
+          }
         },
-      });
-    }
-
-    return null;
-}
-  
-  // Wrapper function to handle layouts and maintain component order
-  function traverseLayout(node: any): any {
-    if (!node.children) {
-      return [];
-    }
-  
-    return node.children
-      .map((child: any) => traverseNode(child)) // Traverse each child node
-      .filter((child: any) => child !== null); // Exclude null nodes
+        right: {
+          type: 'ContentPanel',
+          properties: {
+            layout: {
+              display: 'grid',
+              columns: 12,
+              rows: 12,
+              width: rightPanel?.absoluteBoundingBox?.width || 350
+            }
+          },
+          children: rightPanelComponents.filter(Boolean)
+        }
+      }
+    });
   }
-  
-  
-  
+
+  return null;
+}
 
 // Main handler for the GET request
 export async function GET(req: Request) {
@@ -154,15 +205,16 @@ export async function GET(req: Request) {
   }
 
   try {
-    console.log("Figma API Key present:", !!process.env.FIGMA_API_KEY);  // Check if key exists
+    console.log("Figma API Key present:", !!process.env.FIGMA_API_KEY);
     console.log("Fetching Figma file with ID:", fileId);
 
     const figmaData = await fetchFigmaFile(fileId);
-    const documentDetails = traverseNode(figmaData.document);
+    const transformedData = await traverseNode(figmaData.document);
     
-    return NextResponse.json(documentDetails);
+    return NextResponse.json(transformedData);
+    
   } catch (error: any) {
-    console.error("Detailed error in GET route:", error);  // Add detailed error logging
+    console.error("Detailed error in GET route:", error);
     return NextResponse.json(
       { error: error.message || "An unknown error occurred" },
       { status: error.status || 500 }

@@ -1,62 +1,76 @@
-import { ContentPanel as ContentPanelType } from '@/types';
-import { Box, Flex, VStack, HStack, Grid } from '@chakra-ui/react';
-import { Button } from '../button';
+import { ContentPanel as ContentPanelType } from '../../../types/components/layout';
+import { Box, Grid } from '@chakra-ui/react';
 import { Card } from '../card';
+import { Button } from '../button';
 
 interface ContentPanelProps {
-  properties: ContentPanelType['properties'];
-  children: ContentPanelType['children'];
+  properties: {
+    layout: {
+      display: 'grid'
+      columns: number
+      rows: number
+      width: number
+    }
+  }
+  children: Array<{
+    id: string
+    type: string
+    variant: string
+    width: number
+    height: number
+    grid: {
+      colStart: number
+      colSpan: number
+      rowStart: number
+    }
+    properties: {
+      text: string
+      action: {
+        type: string
+        variant: string
+        deep_link?: string
+        onClick?: string
+      }
+    }
+  }>
 }
 
 export const ContentPanel = ({ properties, children }: ContentPanelProps) => {
-  const { layout, gap, padding, alignment, direction } = properties;
-
-  // Choose the appropriate Chakra component based on layout type
-  const LayoutComponent = {
-    stack: direction === 'vertical' ? VStack : HStack,
-    flex: Flex,
-    grid: Grid,
-  }[layout];
+  const { layout } = properties;
+  const columnWidth = layout.width / layout.columns;
+  const rowHeight = 475 / layout.rows;
 
   return (
-    <Box 
-      w={{ base: 'full', md: '50%' }}
-      p={`${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`}
+    <Grid
+      w={layout.width}
+      h={475}
+      templateColumns={`repeat(${layout.columns}, ${columnWidth}px)`}
+      templateRows={`repeat(${layout.rows}, ${rowHeight}px)`}
     >
-      <LayoutComponent
-        w="full"
-        gap={`${gap}px`}
-        align={getChakraAlignment(alignment)}
-        flexWrap={layout === 'flex' ? 'wrap' : undefined}
-        templateColumns={layout === 'grid' ? 'repeat(auto-fit, minmax(200px, 1fr))' : undefined}
-      >
-        {children.map((child) => {
-          switch (child.type) {
-            case 'Card':
-              return <Card key={child.id} {...child} />;
-            case 'Button':
-              return <Button key={child.id} {...child} />;
-            default:
-              return null;
-          }
-        })}
-      </LayoutComponent>
-    </Box>
-  );
-};
+      {children.map((child) => {
+        const gridArea = `${child.grid.rowStart} / ${child.grid.colStart} / auto / span ${child.grid.colSpan}`;
 
-// Helper function to convert alignment to Chakra UI values
-const getChakraAlignment = (alignment: ContentPanelType['properties']['alignment']) => {
-  switch (alignment) {
-    case 'start':
-      return 'flex-start';
-    case 'center':
-      return 'center';
-    case 'end':
-      return 'flex-end';
-    case 'space-between':
-      return 'space-between';
-    default:
-      return 'flex-start';
-  }
+        switch (child.type) {
+          case 'Card':
+            return (
+              <Card 
+                key={child.id}
+                gridArea={gridArea}
+                {...child}
+              />
+            );
+          case 'Button':
+            return (
+              <Button 
+                key={child.id}
+                gridArea={gridArea}
+                {...child}
+              />
+            );
+          default:
+            return null;
+        }
+      })}
+    </Grid>
+  );
 };

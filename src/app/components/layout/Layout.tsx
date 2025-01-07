@@ -1,5 +1,5 @@
-import { Layout as LayoutType } from '@/types';
-import { Box, Flex } from '@chakra-ui/react';
+import { Layout as LayoutType } from '@/types/components/layout';
+import { Flex } from '@chakra-ui/react';
 import { ImagePanel } from './ImagePanel';
 import { ContentPanel } from './ContentPanel';
 
@@ -8,11 +8,12 @@ interface LayoutProps {
 }
 
 export const Layout = ({ data }: LayoutProps) => {
-  const { panels, properties } = data;
+  const { panels, properties, width, height } = data;
 
   return (
     <Flex
-      w="full"
+      w={width}
+      h={height}
       direction={{ base: 'column', md: 'row' }}
       bg={properties.backgroundColor}
     >

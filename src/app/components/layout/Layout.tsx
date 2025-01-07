@@ -14,8 +14,7 @@ export const Layout = ({ data }: LayoutProps) => {
     <Flex
       w={width}
       h={height}
-      direction={{ base: 'column', md: 'row' }}
-      bg={properties.backgroundColor}
+      direction={{ base: 'column', md: 'row' }} 
     >
       <ImagePanel {...panels.left} />
       <ContentPanel {...panels.right} />

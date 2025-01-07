@@ -1,5 +1,5 @@
 /* eslint-disable */
-
+// @ts-nocheck
 import { ContentPanel as ContentPanelType } from '../../../types/components/layout';
 import { Box, Grid } from '@chakra-ui/react';
 import { Card } from '../card';

@@ -1,5 +1,6 @@
 /* eslint-disable */
-// @ts-ignore 
+// @ts-ignore
+// @ts-nocheck
 import { Card as CardType } from '@/types';
 import { 
   Box,

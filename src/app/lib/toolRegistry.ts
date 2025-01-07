@@ -18,7 +18,10 @@ export async function mapAndExecuteTool(command: string, extractedParams: any) {
   const tool = toolRegistry[toolKey];
   try {
     return await tool(extractedParams);
-  } catch (error) {
-    return { error: `Error executing tool: ${toolKey}`, details: error.message };
+  } catch (error: any) {
+    return { 
+      error: `Error executing tool: ${toolKey}`, 
+      details: error?.message || 'Unknown error'
+    };
   }
 }

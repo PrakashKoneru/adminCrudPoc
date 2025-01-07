@@ -53,12 +53,12 @@ async function createComponent(child: any, gridPosition: any) {
       ? {
           type: 'Link',
           variant: 'Default',
-          deep_link: child.properties?.deep_link || 'https://www.google.com' // Default link
+          deep_link: child.properties?.deep_link || 'https://www.google.com'
         }
       : {
           type: 'Button',
           variant: 'Default',
-          onClick: child.properties?.onClick || 'https://www.google.com' // Default link for button
+          onClick: child.properties?.onClick || 'https://www.google.com'
         };
 
     // Validate the action using the appropriate schema
@@ -72,7 +72,7 @@ async function createComponent(child: any, gridPosition: any) {
       height: child.absoluteBoundingBox?.height || 0,
       grid: gridPosition,
       properties: {
-        text: child.children?.find(c => c.type === "TEXT")?.characters || "",
+        text: child.children?.find((c: { type: string }) => c.type === "TEXT")?.characters || "",
         action: validatedAction
       }
     };

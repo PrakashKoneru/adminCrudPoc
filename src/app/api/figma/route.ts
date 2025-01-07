@@ -35,9 +35,8 @@ function calculateColSpan(width: number, parentBounds: any): number {
 }
 
 function calculateRowStart(y: number, parentBounds: any): number {
-  const parentHeight = parentBounds.height;
-  const approximateRowHeight = parentHeight / 4; // Assuming 4 rows
-  return Math.round((y - parentBounds.y) / approximateRowHeight) + 1;
+  const rowHeight = parentBounds.height / 12;
+  return Math.min(12, Math.max(1, Math.round((y - parentBounds.y) / rowHeight) + 1));
 }
 
 async function createComponent(child: any, gridPosition: any) {

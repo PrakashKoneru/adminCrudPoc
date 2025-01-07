@@ -51,7 +51,6 @@ export const Button = ({ properties, width, height, gridArea }: ButtonProps) => 
       minH="40px"
       maxH="40px"
       p={0}
-      leftIcon={icon ? <Icon as={icon} /> : undefined}
       gridArea={gridArea}
     >
       {text}

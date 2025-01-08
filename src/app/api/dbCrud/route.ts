@@ -153,6 +153,7 @@ export async function POST(request: Request) {
     
     const operations = {
       createLayout: (data: any) => createLayout(data),
+      // @ts-ignore
       getLayouts: (filters: FilterParams) => getLayouts(filters),
       updateLayout: (params: { id: string, data: any }) => updateLayout(params.id, params.data),
       deleteLayout: (params: { id: string }) => deleteLayout(params.id)

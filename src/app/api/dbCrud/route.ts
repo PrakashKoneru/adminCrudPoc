@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Client, fql } from 'fauna'
+import { Client, fql, FaunaError } from 'fauna'
 import OpenAI from 'openai'
 
 const client = new Client({
@@ -19,26 +19,45 @@ interface FilterParams {
   // ... any other properties your layouts might have
 }
 
-// Create
+const testData = {
+  "type": "Layout",
+  "variant": "Default",
+  "width": 700,
+  "height": 475
+};
+
 async function createLayout(data: any) {
   try {
-    console.log('Creating layout with data:', data);
-    
-    // Remove the id from the data
-    const { id, ...dataWithoutId } = data;
-    
+    console.log('Using test data:', JSON.stringify(testData, null, 2));
+
     const documentQuery = fql`
-      layoutsWeb.create(${dataWithoutId}) {
+      layoutsWeb.create(${testData}) {
+        id,
+        ts,
         data
       }
     `;
 
+    console.log('Final query structure:', documentQuery);
+
     const result = await client.query(documentQuery);
     console.log('Fauna creation result:', result);
-    return { success: true, data: result }
-  } catch (error) {
+    
+    return { success: true, data: result };
+  } catch (error: unknown) {
     console.error('Fauna creation error:', error);
-    return { error: 'Failed to create layout', details: error instanceof Error ? error.message : String(error) }
+    
+    if (error instanceof FaunaError) {
+      console.error('FaunaError details:', {
+        message: error.message
+      });
+    }
+
+    return {
+      error: 'Failed to create layout',
+      details: error instanceof Error ? error.message : String(error),
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown Error'
+    };
   }
 }
 

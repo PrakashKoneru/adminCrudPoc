@@ -28,13 +28,26 @@ export default function Home() {
   const handleCommand = async () => {
     if (!command.trim()) return;
 
+    // Log the original command
+    console.log('Original command:', command);
+
     setOutputs((prev) => [{ type: "user", content: command }, ...prev]);
     setCommand("");
     setIsLoading(true);
     setLayoutData(null);
 
     try {
-      const response = await getLLMResponse(command);
+      // Format command to ensure it's a valid string for JSON
+      const sanitizedCommand = command
+        .replace(/[\u2018\u2019]/g, "'") // Smart quotes to regular quotes
+        .replace(/[\u201C\u201D]/g, '"') // Smart double quotes to regular quotes
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .trim();
+
+      console.log('Sanitized command:', sanitizedCommand);
+
+      const response = await getLLMResponse(sanitizedCommand);
+      console.log('Raw response:', response);
       
       if (!response) {
         setOutputs((prev) => [
@@ -50,6 +63,8 @@ export default function Home() {
           ? JSON.parse(response) 
           : response;
 
+        console.log('Parsed response:', parsedResponse);
+
         setOutputs((prev) => [
           { type: "system", content: JSON.stringify(parsedResponse, null, 2) },
           ...prev,
@@ -60,6 +75,7 @@ export default function Home() {
         }
 
       } catch (e) {
+        console.error('JSON parsing error:', e);
         // If parsing fails, treat it as a plain text response
         setOutputs((prev) => [
           { type: "system", content: response.toString() },

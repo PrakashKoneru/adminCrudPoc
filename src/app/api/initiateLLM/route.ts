@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       1. "get components": Fetches component details for a platform (e.g., "ios").
       2. "update component": Updates a specific component with provided updates.
       3. "fetch figma file": Fetches data from a Figma file using its file ID.
+      4. "make DB Operation": For any database-related commands, pass the entire command as dbCommand.
 
       Guidelines:
       - Always extract parameters like "fileId", "platform", or "componentId" from the command.
@@ -26,6 +27,13 @@ export async function POST(req: Request) {
           "params": {
             "key1": "value1",
             "key2": "value2"
+          }
+        }
+      - For database commands, use this format:
+        {
+          "tool": "make DB Operation",
+          "params": {
+            "dbCommand": "exact command text"
           }
         }
       - Be liberal in matching variations of the command.
@@ -46,6 +54,11 @@ export async function POST(req: Request) {
         Response: {
           "tool": "update component",
           "params": { "componentId": "button", "updates": { "text": "Submit" } }
+        }
+      - Command: "Can you add this layout to the database { layout: { id: 1, type: 'button', status: 'active', startDate: '2024-01-01', endDate: '2024-01-01' } }"
+        Response: {
+          "tool": "make db operation",
+          "params": { Can you add this layout to the database { layout: { id: 1, type: 'button', status: 'active', startDate: '2024-01-01', endDate: '2024-01-01' } } }
         }
 
       Analyze the following command and respond accordingly:

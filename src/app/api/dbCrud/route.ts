@@ -20,7 +20,7 @@ interface FilterParams {
 }
 
 // Create
-export async function createLayout(data: any) {
+async function createLayout(data: any) {
   try {
     console.log('Creating layout with data:', data);
     
@@ -43,7 +43,7 @@ export async function createLayout(data: any) {
 }
 
 // Unified Read with filters
-export async function getLayouts() {
+async function getLayouts() {
   try {
     const result = await client.query(fql`
       layoutsWeb.all() {
@@ -60,7 +60,7 @@ export async function getLayouts() {
 }
 
 // Update
-export async function updateLayout(id: string, data: any) {
+async function updateLayout(id: string, data: any) {
   try {
     const result = await client.query(fql`
       Update(
@@ -75,7 +75,7 @@ export async function updateLayout(id: string, data: any) {
 }
 
 // Delete
-export async function deleteLayout(id: string) {
+async function deleteLayout(id: string) {
   try {
     const result = await client.query(fql`
       Delete(Document("layoutsWeb", ${id}))
